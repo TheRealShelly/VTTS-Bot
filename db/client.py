@@ -1,6 +1,6 @@
 from pymongo import AsyncMongoClient
 
-class DB:
+class Client:
     def __init__(self, uri, db_name):
         self.uri = uri
         self.db_name = db_name

@@ -1,12 +1,15 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-from db import DB, UserRepository
 
 import asyncio
 
 import os
 import time
+import random
+
+from db import Client
+from repositories import UserRepository, TTSRepository
 
 import dotenv
 
@@ -24,17 +27,25 @@ bot = commands.Bot(
     owner_id=798687278263304254
 ) 
 
-database = DB(URI, DB_NAME)
+client = Client(URI, DB_NAME)
+db = client.connect()
+
+users = UserRepository(db)
+ttsmessages = TTSRepository(db)
+
+def verify(func):
+    async def inner(interaction: discord.Interaction):
+        await users.getUser(interaction.user.id)
+        return await func(interaction)
+    return inner
 
 async def main():
-    database.connect()
-
     try:
         await bot.start(TOKEN)
     finally:
         await bot.close()
-        await database.close()
-        print('database connection ended')
+        await client.close()
+        print('client connection ended')
 
 @bot.event
 async def on_ready():
@@ -65,8 +76,25 @@ async def sync(interaction: discord.Interaction):
         synced = await bot.tree.sync()
         await interaction.followup.send(f"synced {len(synced)} application command(s)", ephemeral=True)
     except Exception as e:
-        await interaction.followup.send(f"couldnt sync commands, err: {e}", ephemeral=True)
+        await interaction.followup.send(f"{e.__class__.__name__}: {e}", ephemeral=True)
 
+@bot.tree.command(name="daily",description="claim a random amount of money daily")
+@verify
+async def daily(interaction: discord.Interaction):
+
+    await interaction.response.defer()
+    user = await users.getUser(interaction.user.id)
+
+    left = time.time() - user['daily']
+    if left < 86400:
+        await interaction.followup.send(f"to liso veikkkk posso te pagar daqui a {time.strftime("%Hh%Mm", time.gmtime(86400 - left))}")
+        return 0
+    
+    pix = random.randrange(15, 50)
+
+    await users.updateUser(user['id'], {"atm": user['atm']+pix, "daily": time.time()})
+    await interaction.followup.send(f"mandei o pix ai, agr tu ta com {user['atm']+pix} reais")
+    
 
 if __name__ == "__main__":
     try:

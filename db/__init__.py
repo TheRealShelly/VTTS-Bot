@@ -1,4 +1,3 @@
-from .userRepository import UserRepository
-from .client import DB
+from .client import Client
 
-__all__ = ["DB", "UserRepository"]
+__all__ = ["Client"]
