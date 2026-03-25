@@ -78,7 +78,7 @@ async def sync(interaction: discord.Interaction):
     except Exception as e:
         await interaction.followup.send(f"{e.__class__.__name__}: {e}", ephemeral=True)
 
-@bot.tree.command(name="daily",description="claim a random amount of money daily")
+@bot.tree.command(name="daily",description="me paga meu dinheiro")
 @verify
 async def daily(interaction: discord.Interaction):
 
@@ -87,14 +87,21 @@ async def daily(interaction: discord.Interaction):
 
     left = time.time() - user['daily']
     if left < 86400:
-        await interaction.followup.send(f"to liso veikkkk posso te pagar daqui a {time.strftime("%Hh%Mm", time.gmtime(86400 - left))}")
+        await interaction.followup.send(f"to liso veikkkk posso te pagar daqui a `{time.strftime("%Hh%Mm", time.gmtime(86400 - left))}`")
         return 0
     
     pix = random.randrange(15, 50)
 
     await users.updateUser(user['id'], {"atm": user['atm']+pix, "daily": time.time()})
     await interaction.followup.send(f"mandei o pix ai, agr tu ta com {user['atm']+pix} reais")
-    
+
+@bot.tree.command(name="atm", description="mostra quanto vc tem no pix")
+@verify
+async def atm(interaction: discord.Interaction):
+    await interaction.response.defer()
+
+    user = await users.getUser(interaction.user.id)
+    await interaction.followup.send(f"você tem {user['atm']} {"real" if user['atm'] == 1 else 'reais'}")
 
 if __name__ == "__main__":
     try:
